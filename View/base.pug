@@ -1,0 +1,20 @@
+doctype html
+html
+  head
+    meta(charset="UTF-8")
+    meta(name="viewport" ,content="width=device-width, initial-scale=1.0")
+    link(rel="stylesheet",href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/all.min.css",crossorigin="")
+    link(href="https://fonts.googleapis.com/css?family=Roboto&display=swap",rel="stylesheet")    
+    script(src='https://cdnjs.cloudflare.com/ajax/libs/axios/0.21.4/axios.min.js' integrity='sha512-lTLt+W7MrmDfKam+r3D2LURu0F47a3QaW5nF0c6Hl0JDZ57ruei+ovbg7BrZ+0bjVJ5YgzsAWE+RreERbpPE1g==' crossorigin='anonymous' referrerpolicy='no-referrer')
+    link(rel="stylesheet", href="css/style.css")
+    title #{title}
+  body
+    block header
+      include nav
+    block content
+      p content will come here
+    include footer.pug 
+    block scripts 
+      script(src="./js/script.js")
+    
+    
