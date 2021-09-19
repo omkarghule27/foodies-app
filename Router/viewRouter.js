@@ -1,17 +1,16 @@
-const express = require("express");
-const {  getHomePage, getLoginPage, getSignupPage, getPlansPage, getProfilePage, getResetPasswordPage} = require("../Controller/viewController");
-const {isLoggedIn, logout, authorization} = require("../Controller/authController");
-const viewRouter = express.Router();
-
-
-viewRouter.use(isLoggedIn);
-//console.log("*******");
-viewRouter.route("").get(getHomePage);
-viewRouter.route("/login").get(getLoginPage);
-viewRouter.route("/signup").get(getSignupPage);
-viewRouter.route("/plans").get(getPlansPage);
-viewRouter.route("/logout").get(logout);
-viewRouter.route("/profile").get(getProfilePage);
-viewRouter.route("/resetpassword/:token").get(getResetPasswordPage);
-
-module.exports= viewRouter;
+const viewRouter = require("express").Router();
+const {   getHomePage, getPlansPage, getLoginPage, getProfilePage ,getSignupPage,getForgetPasswordPage,getResetPage,getSomethingWentWrong} = require("../controller/viewController");
+const { handleResetRequest,isUserLoggedIn, protectRoute, logout } = require("../controller/authController");
+// req.cookies=> jwt => name 
+//  /plans => isUserLoggedIN
+viewRouter.use(isUserLoggedIn);
+viewRouter.get("/", getHomePage);
+viewRouter.get("/signup",getSignupPage)
+viewRouter.get("/logout", logout);
+viewRouter.get("/plans", getPlansPage);
+viewRouter.get("/login", getLoginPage);
+viewRouter.get("/profile", protectRoute, getProfilePage);
+viewRouter.get("/forgetPassword",getForgetPasswordPage); 
+viewRouter.get("/resetPassword/:token", handleResetRequest,getResetPage)
+viewRouter.get("/somethingWentWrong", getSomethingWentWrong);
+module.exports = viewRouter;

@@ -1,46 +1,68 @@
-const express = require('express');
-const {signup, login, forgetPassword , resetPassword} =require("../Controller/authController")
-const userRouter=express.Router();
-const {protectRoute} = require("../Controller/authController");
-const multer=require("multer");
-const storage=multer.diskStorage({
-    destination:function(req, file, cb){
-        // if(file.mimtype.includes('image')){
+const userRouter = require("express").Router();
+const { signup, login, protectRoute, isAuthorized, forgetPassword, resetPassword } = require("../controller/authController");
+const { getUser, getAllUser, updateProfileImage, deleteUser } = require("../controller/userController");
+const multer = require("multer");
+// single file upload
+// const sharp = require("sharp");
+// const fs = require("fs");
+// ///////////////////////////JSON
+// const {
+//   getAllUser,
+//   getUser,
+//   updateUser,
+//   deleteUser
+// } = require("../controller/userController");
+// const {checkId} = require("../utility/utilityfn");
+// userRouter
+//   .route("")
+//   .get(getAllUser)
+//   .post(checkbody, createUser);
 
-        // }
-        cb(null, "public/images/users");
-    },
-    filename: function(req, file, cb){
-        var fname='user'+ Date.now()+ '.jpg'
-        cb(null, fname);
-    }
-});
+// userRouter
+//   .route("/:id")
+//   .get(getUser)
+//   .patch(updateUser)
+//   .delete(deleteUser);
+// /////////////////////DB//////////////////////
 
-function fileFilter(req, file,cb){
-    if(file.mimetype.includes("image")){
-        cb(null, true);
-    }
-    else{
-        cb(null, false);
-    }
+const filter = function (req, file, cb) {
+  if (file.mimetype.startsWith("image")) {
+    cb(null, true)
+  } else {
+    cb(new Error("Not an Image! Please upload an image"), false)
+  }
 }
-const upload=multer({
-    storage:storage,
-    fileFilter:fileFilter
-});
+//storageFilter => file=> jpg,destination
 
-const {getAllUsers , createUser , findUserById ,updateUserById, deleteUserById , updateProfileImage} = require("../Controller/userController");
-console.log('inside router');
-//userRouter.route("").get(getAllUsers).post(createUser);
-userRouter.route("/:id")
-.get(protectRoute, findUserById)
-.patch(protectRoute, updateUserById)
-.delete(protectRoute, deleteUserById);
+const multerStorage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, "public/img/users/");
+  },
+  filename: function (req, file, cb) {
+    cb(null, `user-${Date.now()}.jpeg`)
+  }
+})
+// ram
 
-userRouter.post("/signup",signup);
-userRouter.post("/login",login);
-userRouter.post("/forgetpassword",forgetPassword);
-userRouter.patch("/resetpassword/:token", resetPassword);
-userRouter.patch("/updateprofilephoto", upload.single("user"),updateProfileImage);
+const upload = multer({
+  storage: multerStorage,
+  fileFilter: filter
+})
+//  mutipart data=> everything=> image  , naming , extension => put 
+userRouter.patch("/ProfileImage", upload.single("photo"), protectRoute, updateProfileImage);
 
-module.exports=userRouter; 
+userRouter.post("/signup", signup);
+userRouter.post("/login", login);
+userRouter.patch("/forgetPassword",  forgetPassword)
+userRouter.patch("/resetPassword/:token",resetPassword)
+// profile page 
+userRouter.use(protectRoute)
+userRouter.get("/userProfile", getUser);
+// isAuthorized
+// admin
+userRouter.use(isAuthorized(["admin"]));
+userRouter.route("").get(getAllUser);
+userRouter
+  .route("/:id")
+  .delete(deleteUser);
+module.exports = userRouter;

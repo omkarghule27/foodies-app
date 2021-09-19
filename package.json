@@ -1,11 +1,12 @@
 {
-  "name": "BackEnd",
+  "name": "Lecture-20_Backend",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node app.js"
+    "run": "nodemon server.js",
+    "start": "node server.js"
   },
   "keywords": [],
   "author": "",
@@ -14,12 +15,14 @@
     "cookie-parser": "^1.4.5",
     "express": "^4.17.1",
     "jsonwebtoken": "^8.5.1",
-    "mongoose": "^6.0.5",
-    "multer": "^1.4.3",
-    "nodemailer": "^6.6.3",
-    "nodemon": "^2.0.12",
-    "pug": "^3.0.2",
-    "stripe": "^8.176.0",
-    "uuid": "^8.3.2"
+    "mongoose": "^5.9.7",
+    "multer": "^1.4.2",
+    "nodemailer": "^6.4.6",
+    "pug": "^2.0.4",
+    "sharp": "^0.25.2",
+    "stripe": "^8.49.0"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.2"
   }
 }

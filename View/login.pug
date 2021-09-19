@@ -1,18 +1,18 @@
-extends base.pug
+extends base
 block content
-  form
-    .entry
-      .entry-text
-        | Email
-      input#email(type='email' name="Email")
-    .entry 
-      .entry-text 
-        | Password 
-      input#pw(type='password' name='password') 
-    .btn-parent
-            button.btn.btn-full.form-button.loginButton LOGIN
-    .btn-parent
-            button.btn.btn-full.form-button.forgetPassword FORGET PASSWORD
-    span#message
-  block scripts
-    script(src="./js/login.js")  
+  .container-grey
+    .form-container
+      form.login.form-page
+        h3.heading-secondary LOGIN
+        .entry
+          .entry-text Email
+          input(type='email' placeholder="youremail@gmail.com").email
+        .entry
+          .entry-text Password
+          input(type='password' placeholder="*********").password
+        .entry
+          .btn-parent.left
+            button(type="submit").btn.btn-full.form-button LOGIN
+        .form-links__group
+          a(href="/signup").form-links Signup 
+          a(href="/forgetPassword").form-links Forget Password

@@ -1,66 +1,66 @@
-const planModel = require("../Model/plansModel");
-const userModel = require("../Model/usersModel");
-//send demo page to client
-
-// function getDemoPage(req, res){
-//     res.render("base.pug",{title:"Demo Page", content:"I am indian... "});
-
-// }
-
-async function getHomePage(req, res){
-
-    try{
-        let plans= await planModel.find();
-        plans=plans.slice(0,3);
-        res.render("home.pug",{name:req.name, plans});
-    }
-    catch(error){
-        console.log(error);
-    }
-
-    console.log("Inside ==>", getHomePage);
-    console.log("Inside req.name==>", req.name);
-    res.render("home.pug",{name:req.name});
+const planModel = require("../model/planModel");
+const userModel = require("../model/userModel");
+function getTrialPage(req, res) {
+  const name = req.userName;
+  res.render("trial.pug", {
+    titleofThePage: "Trial Page", name
+  })
 }
 
-function getLoginPage(req, res){
-    res.render("login.pug", {name:req.name});
+async function getHomePage(req, res) {
+  let plans = await planModel.find().limit(3);
+  let name = req.userName;
+  res.render("home.pug", {
+    title: "Home Page", plans, name: name
+  })
 }
-
-function getSignUpPage(req, res){
-    res.render("signup.pug", {name:req.name});
+// 
+async function getPlansPage(req, res) {
+  // planModel =>get  plans 
+  let plans = await planModel.find();
+  let name = req.userName;
+  res.render("plansPage.pug", {
+    title: "Plans Page", plans, name
+  })
 }
-
-async function getPlansPage(req, res){
-    try{
-        let plans=await planModel.find();
-        console.log(plans);
-        res.render("plans.pug", {name: req.name,plans:plans});
-    }
-    catch{
-
-    }
-    
+function getLoginPage(req, res) {
+  // let name = req.userName;
+  res.render("login.pug", {
+    title: "Login"
+  })
 }
-
-function getProfilePage(req, res) {
-    // console.log('%%%Id%%%%',req.id)
-    // const user = await userModel.findById(req.id);
-    // const name = req.userName;
-    // console.log('%%%USER%%%%',user)
-    // res.render("profile.pug", {
-    //   title: "Profile Page",
-    //   user, name
-    // })
-    res.render("profile.pug",{user:req.user});
-  }
-
-async function getResetPasswordPage(req, res){
-    res.render("resetPassword.pug", {name:req.name})
+async function getProfilePage(req, res) {
+  const user = await userModel.findById(req.id);
+  const name = req.userName;
+  res.render("profile.pug", {
+    title: "Profile Page",
+    user, name
+  })
 }
-module.exports.getProfilePage = getProfilePage;
+async function getSignupPage(req, res) {
+  res.render("signupPage.pug", {
+    title: "Signup Page"
+  })
+}
+async function getForgetPasswordPage(req, res) {
+  res.render("forgetPassword.pug", {
+    title: "ForgetPassword",
+  })
+}
+async function getResetPage(req, res) {
+  const { token } = req;
+  res.render("resetPassword", { token });
+
+}
+async function getSomethingWentWrong(req, res) {
+  res.render("somethingWentWrong");
+}
+module.exports.getTrialPage = getTrialPage;
 module.exports.getHomePage = getHomePage;
-module.exports.getLoginPage = getLoginPage;
-module.exports.getSignupPage = getSignUpPage;
 module.exports.getPlansPage = getPlansPage;
-module.exports.getResetPasswordPage = getResetPasswordPage;
+module.exports.getLoginPage = getLoginPage;
+module.exports.getProfilePage = getProfilePage;
+module.exports.getSignupPage = getSignupPage;
+module.exports.getForgetPasswordPage = getForgetPasswordPage;
+module.exports.getResetPage = getResetPage;
+module.exports.getSomethingWentWrong = getSomethingWentWrong;

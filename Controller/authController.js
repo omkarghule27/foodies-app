@@ -1,274 +1,253 @@
-
-const userModel = require("../Model/usersModel");
-const express=require("express");
+const JWT_SECRET = process.env.JWT_SECRET || require("../config/secrets").JWT_SECRET;
+// db 
+const userModel = require("../model/userModel");
 const jwt = require("jsonwebtoken");
-//const { SECRET_KEY, APP_KEY } = require("../config/secrets");
-const { usersModel } = require("../Model/usersModel");
-
-const nodemailer=require("nodemailer");
-process.env['NODE_TLS_REJECT_UNAUTHORIZED']=0;
-
-const SECRET_KEY = process.env.SECRET_KEY;
-const GMAIL_ID = process.env.GMAIL_ID;
-const APP_KEY = process.env.APP_KEY;
-
-module.exports = async function sendEmail(message) {
+const emailHelper = require("../utility/sendEmail");
+async function signup(req, res) {
   try {
-    // email configuration=> transport
-    const transport = nodemailer.createTransport({
-      service: "gmail",
-      host: "smtp.gmail.com",
-      secure: true,
-      auth: {
-        user: GMAIL_ID,
-        pass: APP_KEY
-      }
-    });
-    // email options
-    const emailOptions = {
-      from: message.from,
-      to: message.to,
-      subject: message.text,
-      text: message.text
+    const newUser = await userModel.create(req.body);
+    //  welcome mail
+    // send Mail
+    let html = `<h1>Welcome ${newUser.name} to our Family </h1>
+      `;
+    let subject = "Get Going With life savers";
+    let options = {
+      to: newUser.email,
+      html,
+      subject: subject
     }
-    // send mail
-    let res =await transport.sendMail(emailOptions);
-    return res;
+    await emailHelper(options);
+    res.status(201).json({
+      status: "user Signedup",
+      newUser,
+    });
   } catch (err) {
-    console.log(err);
+    res.status(200).json({
+      status: "user can't be created",
+      err,
+    });
+  }
+}
+// token create
+// payload => user id
+async function login(req, res) {
+  try {
+    if (req.body.email && req.body.password) {
+      // find user
+      const user = await userModel.findOne({ email: req.body.email }).select("+password");
+      if (user) {
+        // console.log(user);
+        if (user.password == req.body.password) {
+          const id = user["_id"];
+          const token = jwt.sign({ id }, JWT_SECRET);
+          // header
+          res.cookie("jwt", token, { httpOnly: true });
+          return res.status(200).json({
+            status: "userLogged In", token
+          });
+        } else {
+          throw new Error("email or password didn't match ");
+        }
+      } else {
+        throw new Error("User not found");
+      }
+    }
+
+    throw new Error("Invalid Input");
+  } catch (err) {
+    // console.log(err);
+    return res.status(200).json({
+      status: "user can't be loggedIn",
+      err,
+    });
   }
 }
 
-
-async function signup(req, res){
-    try{
-        let user=req.body;
-        console.log(user);
-        let newUser = await userModel.create({
-            name:user.name,
-            email:user.email,
-            password:user.password,
-            confirmpassword:user.password,
-            role:user.role
-        });
-        console.log(newUser);
-        res.status(201).json({
-            msg:"New User Created successfully!!!",
-            
-        });
-
-    }catch(error){
-        res.status(201).json({
-            msg:"New User Error!!!",  
-        });
-    }
-
+async function logout(req, res) {
+  // token => loggedIN
+  res.cookie("jwt", "wrongtoken", { httpOnly: true });
+  res.status(200).json({
+    status: "user LoggedOut"
+  })
 }
-async function login(req, res){
-    try{
-        let {email, password} = req.body;
-        console.log(email, password);
-        let loggedInUser= await userModel.find({email:email});
-        if(loggedInUser.length){
-            console.log('***indjsnb***');
-            let user = loggedInUser[0];
-            if(user.password==password){
-                console.log('***222222***');
-                const token =jwt.sign({id : user["_id"]}, SECRET_KEY);
-                res.cookie('jwt', token, {httpOnly:true});
-                //console.log(token);
-                res.status(200).json({
-                    message:"Logged in successfully",
-                    data:loggedInUser[0]
-                })
-            }
-            else{
-                res.status(200).json({
-                    message:"Password dont match!!!"    
-                })
-            }
-        }
-        else{
-            res.status(200).json({
-                message:"User Doesnt Exist"    
-            })
-        }
-        console.log(loggedInUser);
-    }catch(error){
-        res.status(501).json({
-            message:"Login failed!!!"    
-        })
+// It verifies
+async function protectRoute(req, res, next) {
+  try {
+    let token;
+    if (req.headers.authorization) {
+      token = req.headers.authorization.split(" ").pop();
+    } else if (req.cookies.jwt) {
+      token = req.cookies.jwt
     }
-
-}
-async function protectRoute(req, res, next){
-    try{
-        const token=req.cookies.jwt;
-        //const token =req.headers.authorization.split(" ").pop() ;
-        console.log(token);
-        console.log('inside protect route function');
-        //console.log(token)
-        const payload=jwt.verify(token, SECRET_KEY);
-        console.log(payload);
-        if(payload){
-            req.id=payload.id;//id is in req.id
-            next();
-        }
-        else{
-            res.status(501).json({
-                message:"Please log in"    
-            })
-        }
-    }catch(error){
-        res.status(501).json({
-            message:"Please log in"    
-        })
-    }
-}
-async function authorization(req, res, next){
-    console.log('admin authorization');
-    try{
-        console.log('req.id;', req.id);
-        const userId =req.id;
-        console.log('userId:', userId);
-        let user=  await userModel.findById(userId);
-        console.log('userId:', userId);
-        if(user.role=='admin'){
-            console.log('admin authorized');
-            next();
-        }
-        else{
-            res.status(501).json({
-                message:"You are not Admin"    
-            })
-        }
-    }catch(error){
-        res.status(501).json({
-            message:"Please log in"    
-        })
-    }
-
-
-}
-
-async function forgetPassword(req, res){
-    try{
-        let {email} = req.body;
-        console.log(email);
-        let user = await userModel.findOne({email:email});
-        console.log(user);
-        if(user){
-        
-            let token = user.createResetToken();
-            await user.save({validateBeforeSave:false});
-            let resetLink= "http://localhost:3000/api/users/resetpassword/"+ token;
-            let message={
-                from:"omkarghule2701@gmail.com",
-                to:email,
-                subject:"Reset Password",
-                test:resetLink
-            }
-            let response= await sendEmail(message);
-            response.json({
-                message:"Sent u a mail to reset password"  ,
-                resetLink  
-            })
-        
-        }
-        else{
-            res.status(501).json({
-                message:"No user with this email"    
-            })
-        }
-    }
-    catch{
-        res.status(200).json({
-            message:"Can Not reset password"    
-        })
-    }
-
-}
-
-async function resetPassword(req, res){
-    try{
-
-        const token=req.params.token;
-        const {password, confirmpassword} =req.body;
-        const user= await userModel.findOne({
-            pwToken:token,
-            tokenTime :{ $gt : Date.now()}
-        });
-        console.log(user);
-        console.log(password);
-        console.log(confirmpassword);
-        if(user){
-            user.resetPasswordHandler(password, confirmpassword);
-            await user.save();
-            res.status(200).json({
-                message:"Reset password successfull." 
-            })
-        }
-        else{
-            res.status(200).json({
-                message:"time to Reset password expired." 
-            })
-        }
-    }
-    catch(error){
-        res.status(501).json({
-            message:"Some error occured while Reseting the password!" 
-        })
-    }
-}
-
-async function isLoggedIn(req, res, next){
-    try{
-        console.log("Inside isLoggedIn");
-        let token = req.cookies.jwt;
-        console.log("Inside token==>", token);
-        let payload= jwt.verify(token, SECRET_KEY);
-        console.log("Inside payload==>", payload);
-        if(payload){
-            let user=await userModel.findById(payload.id);
-            console.log("Inside user==>", user);
-            req.name=user.name;
-            req.user=user;
-            console.log("Inside req.name==>", req.name);
-            next();
-        }
-        else{
-            next();
-        }
-
-    }
-    catch(error){
-        // res.status(200).json({
-        //     msg:"BIGGGG EROOR",
-        //     error
-        // })
+    // console.log(token)
+    if (token) {
+      const payload = jwt.verify(token, JWT_SECRET);
+      if (payload) {
+        // user id 
+        // console.log(payload)
+        const user = await userModel.findById(payload.id);
+        req.role = user.role;
+        req.id = payload.id
         next();
+      } else {
+        throw new Error("Token is modified please login again");
+      }
+    } else {
+      throw new Error("Please login first");
     }
-} 
+  } catch (err) {
+    // console.log(err);
+    // client postman => json reply
+    // client browser => authorized page
+    let clientType = req.get("User-Agent");
+    // console.log(clientType);
+    if (clientType.includes("Mozilla") == true) {
+      //  backend express 
+      return res.redirect("/login");
+    }
+    else {
+      res.status(200).json({
+        err: err.message,
+      });
+    }
 
-async function logout(req, res){
-    try{
-        res.clearCookie("jwt");//remove ey
-        res.redirect("/login");
-    }
-    catch(error){
-        res.status(501).json({
-                msg:"BIGGGG EROOR LOGOUT",
-                 error
-         })
-    }
+  }
 }
+async function isUserLoggedIn(req, res, next) {
+  try {
+    let token;
+    if (req.cookies.jwt) {
+      token = req.cookies.jwt
+    }
+    // console.log(token)
+    if (token) {
+      const payload = jwt.verify(token, JWT_SECRET);
+      if (payload) {
+        // user id 
+        // console.log(payload)
+        const user = await userModel.findById(payload.id);
+        req.role = user.role;
+        req.id = payload.id
+        req.userName = user.name
+        next();
+      } else {
+        next();
+      }
+    } else {
+      next();
+    }
+  } catch (err) {
+    // console.log(err);
+    next();
+  }
+}
+function isAuthorized(roles) {
+  return function (req, res, next) {
+    if (roles.includes(req.role) == true) {
+      next()
+    } else {
+      res.status(403).json({
+        status: "user not allowed"
+      })
+    }
+  }
+}
+async function forgetPassword(req, res) {
+  let { email } = req.body;
+  try {
+    console.log(email);
+    const user = await userModel.findOne({ email: email });
+    if (user) {
+      // create token
+      const resetToken = user.createResetToken();
+      // confirm password
+      await user.save({ validateBeforeSave: false });
+      let resetPasswordLink = `${req.protocol}://${req.get("host")}/resetPassword/${resetToken}`;
+      // send Mail
+      let html = `<h1>Please click on the link to reset your password </h1>
+      <p>${resetPasswordLink}</p>
+      `;
+      let subject = "Reset Token Email";
+      let options = {
+        to: user.email,
+        html,
+        subject: subject
+      }
+      await emailHelper(options);
+      res.status(200).json({
+        resetPasswordLink,
+        resetToken,
+        status: "Token send to your email"
+      })
+    } else {
+      throw new Error("User not found");
+    }
+  } catch (err) {
+    console.log(err);
+    res.status(400).json({
+      err: err.message,
+      status: "cannot reset password"
+    }
+    )
+  }
+}
+async function handleResetRequest(req, res, next) {
+  try {
+    const { token } = req.params;
+    console.log(token);
+    let user = await userModel.findOne({ resetToken: token });
+    if (user) {
 
+      req.token = token;
+      console.log("220 " + req.token)
+      // console.log("I was inside");
+      next();
 
-module.exports.signup=signup;
-module.exports.login=login;
-module.exports.protectRoute=protectRoute;
-module.exports.authorization=authorization;
-module.exports.forgetPassword=forgetPassword;
-module.exports.resetPassword=resetPassword;
-module.exports.isLoggedIn=isLoggedIn;
-module.exports.logout=logout;
+      // token verify 
+    } else {
+      res.redirect("/somethingWentWrong");
+    }
+
+  } catch (err) {
+    res.redirect("/somethingWentWrong");
+  }
+}
+async function resetPassword(req, res) {
+  try {
+    const token = req.params.token
+    const { password, confirmPassword } = req.body;
+    console.log("218 " + token);
+    const user = await userModel.findOne({
+      resetToken: token
+    })
+    if (user) {
+      user.resetPasswordhandler(password, confirmPassword)
+      // db save 
+      console.log(200 + "" + password + " " + confirmPassword);
+      await user.save();
+      res.status(200).json({
+        success: "user password updated login with new password"
+      })
+
+    } else {
+      console.log("I was here");
+      throw new Error("Not a valid token");
+    }
+
+  } catch (err) {
+    console.log(err.message);
+    res.status(200).json({
+      status: "Some error occurred",
+      err
+    })
+  }
+}
+module.exports.login = login;
+module.exports.signup = signup;
+module.exports.protectRoute = protectRoute;
+module.exports.isAuthorized = isAuthorized;
+module.exports.forgetPassword = forgetPassword
+module.exports.resetPassword = resetPassword;
+module.exports.logout = logout;
+module.exports.isUserLoggedIn = isUserLoggedIn;
+module.exports.handleResetRequest = handleResetRequest;

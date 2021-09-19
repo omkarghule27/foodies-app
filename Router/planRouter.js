@@ -1,27 +1,22 @@
-const express = require('express');
-const planRouter=express.Router();
-const {protectRoute, authorization} = require("../Controller/authController");
-//const {protectRoute} = require("../Controller/authController");
+const planRouter = require("express").Router();
+const {
+  getAllPlans,
+  getPlan,
+  updatePlan,
+  deletePlan,
+  createPlan,
+} = require("../controller/planController");
 
+const { protectRoute,isAuthorized } = require("../controller/authController");
+// const { checkId } = require("../utility/utilityfn");
+// planRouter.param("id", checkId);
+// admin ,restaurantowner
+planRouter.route("").get(getAllPlans).post(protectRoute, createPlan);
+planRouter.route("/:id").get(getPlan).patch(protectRoute, updatePlan).delete(protectRoute, deletePlan);
+planRouter.use(protectRoute);
+planRouter.use(isAuthorized(["admin","restaurantowner"]));
+// createPlan
+// updatePlan
+// deletePlan
 
-const {createPlan, getAllPlans, findPlanById, updatePlanById, deletePlanById } = require("../Controller/planController");
-console.log('inside router');
-planRouter.route("")
-.post(createPlan)
-.get(getAllPlans);
-
-planRouter.route("/:id")
-.get(protectRoute,findPlanById)
-.patch(protectRoute, authorization,updatePlanById)
-.delete(protectRoute, authorization,deletePlanById);
-
-/*
-const {getAllPlans, createPlan, getPlanById, 
-    updatePlanById, deletePlanById } = require("../Controller/planController");
-
-
-    console.log('inside router');
-planRouter.route("").get(getAllPlans).post(createPlan);
-planRouter.route("/:id").get(getPlanById).patch(updatePlanById).delete(deletePlanById);
-*/
-module.exports=planRouter; 
+module.exports = planRouter;
