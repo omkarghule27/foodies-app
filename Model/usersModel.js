@@ -1,12 +1,12 @@
 const mongoose= require("mongoose");
 const crypto = require("crypto");
 
-/*mongoose.connect("mongodb+srv://admin:admin@cluster0.hzqjf.mongodb.net/food?retryWrites=true&w=majority")
+mongoose.connect("mongodb+srv://admin:admin@cluster0.hzqjf.mongodb.net/food?retryWrites=true&w=majority")
     .then((db)=>
     {
         console.log('Connected to DB');
     }
-);*/
+);
 
 let userSchema = new mongoose.Schema({
     name:{
